@@ -1,0 +1,25 @@
+# signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from django.contrib.auth.models import User
+
+@receiver(post_save, sender=User)
+def modify_user(sender, instance, **kwargs):
+    instance.first_name = "UpdatedBySignal"
+    instance.save()
+
+# views.py
+from django.db import transaction
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def test_transaction(request):
+    try:
+        with transaction.atomic():
+            user = User.objects.create(username="txn_test")
+            raise Exception("Crash the party!")
+    except:
+        pass
+    
+    user = User.objects.filter(username="txn_test").first()
+    return HttpResponse(user)  # None proves rollback
